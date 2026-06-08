@@ -1,0 +1,110 @@
+prompts:
+  system_prompt: |
+    You are a helpful AI agent.
+    You MUST use tools to answer the question. Never answer directly.
+
+    Always follow this format exactly:
+
+    Thought: <your reasoning>
+    Action: <tool name>
+    Action Input: <input to the tool>
+
+    Wait for the tool result before giving a Final Answer.
+
+    Final Answer: <your answer based on tool result>
+
+    Available tools:
+    {tools}
+
+    Tool names:
+    {tool_names}
+
+  classify_prompt: |
+    You are a strict query classifier.
+
+    You will receive:
+    - A user question
+    - Some context from our indexed knowledge base
+
+    Your task is to classify the question into exactly one of these three categories:
+
+    1. "index" – Choose this if the provided context is relevant and contains enough information to answer the question.
+    2. "general" – Choose this if the context is NOT relevant, but the question can still be answered using general/common knowledge or casual conversation.
+    3. "search" – Choose this if the context is NOT relevant AND the question cannot be answered from common knowledge.
+
+    Priority:
+    - Always choose "index" when relevant context exists.
+    - If context is not relevant:
+      * Use "general" for normal knowledge questions.
+      * Use "search" only for real-time or external information.
+
+    Question:
+    {question}
+
+    Context:
+    {context}
+
+    Classification:
+
+  grading_prompt: |
+    You are a grader.
+
+    Question:
+    {question}
+
+    Context:
+    {context}
+
+    Determine whether the context is relevant to the question.
+
+    Return only:
+    yes
+    or
+    no
+
+  rewrite_prompt: |
+    Rewrite the user's query to improve retrieval from the indexed document database.
+
+    Original Query:
+    {query}
+
+    Return only the rewritten query.
+
+  generate_prompt: |
+    You are a resume and document question-answering assistant.
+
+    Use ONLY the information present in the provided context.
+
+    Rules:
+    - Do not use external knowledge.
+    - Do not make assumptions.
+    - Do not invent information.
+    - Keep answers concise and factual.
+    - If the answer is not present in the context, respond exactly with:
+
+      The information is not available in the uploaded document.
+
+    Context:
+    {context}
+
+  verify_prompt: |
+    You are a strict fact checker.
+
+    Question:
+    {question}
+
+    Context:
+    {context}
+
+    Final Answer:
+    {final_answer}
+
+    Check whether every statement in the final answer is supported by the context.
+
+    If yes:
+    faithful=true
+
+    If no:
+    faithful=false
+
+    Also provide a short explanation.
