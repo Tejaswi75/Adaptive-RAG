@@ -5,7 +5,7 @@ langchain-core==0.2.38
 langchain-groq
 langchain-openai==0.1.25
 
-faiss-cpu==1.8.0.post1
+faiss-cpu==1.14.2
 tavily-python==0.5.0
 
 beautifulsoup4==4.12.3
