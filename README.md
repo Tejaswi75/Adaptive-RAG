@@ -365,10 +365,10 @@ Passionate about:
 - Backend Engineering
 
 GitHub:
-https://github.com/your-github-username
+https://github.com/tejaswi75
 
 LinkedIn:
-https://linkedin.com/in/your-linkedin-profile
+https://linkedin.com/in/tejaswisonal
 
 ---
 
