@@ -7,7 +7,7 @@
 [![Groq](https://img.shields.io/badge/Groq-LLM-red)](https://groq.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-🔗 **Repository:** [github.com/tejaswi75/Adaptive-Rag](https://github.com/tejaswi75/Adaptive-Rag)
+🔗 **Repository:** [github.com/Tejaswi75/Adaptive-RAG](https://github.com/Tejaswi75/Adaptive-RAG)
 
 ---
 
@@ -116,7 +116,7 @@ Response
 ## 📂 Project Structure
 
 ```text
-Adaptive-Rag/
+Adaptive-RAG/
 │
 ├── src/
 │   ├── api/
@@ -170,9 +170,9 @@ Quick links: [`src/`](src) · [`streamlit_app/`](streamlit_app) · [`requirement
 ### Clone Repository
 
 ```bash
-git clone https://github.com/tejaswi75/Adaptive-Rag.git
+git clone https://github.com/Tejaswi75/Adaptive-RAG.git
 
-cd Adaptive-Rag
+cd Adaptive-RAG
 ```
 
 ### Create Virtual Environment
