@@ -98,6 +98,7 @@ streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 |---|---|---|
 | `GROQ_API_KEY` | — | LLM inference (required) |
 | `TAVILY_API_KEY` | — | Web search (required) |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Groq chat model |
 | `MONGO_URI` | unset | MongoDB for chat history. If unset, history is kept in memory (lost on restart) |
 | `BACKEND_URL` | `http://127.0.0.1:8000` | Where the Streamlit UI reaches the API |
 | `MAX_REWRITES` | `2` | Query rewrites before falling back to web search |

@@ -88,7 +88,7 @@ def main() -> None:
     args = parser.parse_args()
 
     questions = json.loads((HERE / "questions.json").read_text())
-    judge = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0).with_structured_output(Verdict)
+    judge = ChatGroq(model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"), temperature=0).with_structured_output(Verdict)
 
     if not args.skip_upload:
         print("Uploading sample document...")
