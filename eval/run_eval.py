@@ -25,17 +25,11 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from pydantic import BaseModel, Field
 
 load_dotenv()
 
 HERE = Path(__file__).parent
 BACKEND = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
-
-
-class Verdict(BaseModel):
-    correct: bool = Field(description="True if the answer matches the reference in substance")
-    reason: str = Field(description="One short sentence explaining the verdict")
 
 
 JUDGE_PROMPT = """You are grading a question-answering system.
@@ -47,7 +41,34 @@ System answer: {answer}
 Mark the answer correct if it contains the key facts of the reference answer and
 does not contradict it. Extra correct detail is fine. Wording does not matter.
 For questions whose reference says it is judged on using web results, mark it
-correct if the system gives a concrete, plausible answer instead of refusing."""
+correct if the system gives a concrete, plausible answer instead of refusing.
+
+Reply with CORRECT or INCORRECT on the first line, then one short sentence of reasoning."""
+
+DELAY_S = float(os.getenv("EVAL_DELAY_S", "5"))   # spacing between questions (free-tier rate limits)
+RETRIES = 3
+
+
+def with_retries(fn, *args):
+    """Call fn, retrying with a pause on errors such as rate limits."""
+    for attempt in range(RETRIES):
+        try:
+            return fn(*args)
+        except Exception as e:
+            if attempt == RETRIES - 1:
+                raise
+            wait = 20 * (attempt + 1)
+            print(f"   retrying in {wait}s ({type(e).__name__}: {str(e)[:80]})")
+            time.sleep(wait)
+
+
+def judge_answer(judge, q: dict, answer: str) -> tuple:
+    """Ask the judge model; parse its plain-text verdict."""
+    reply = judge.invoke(JUDGE_PROMPT.format(
+        question=q["question"], reference=q["reference"], answer=answer)).content.strip()
+    first = reply.split("\n", 1)[0].upper()
+    correct = "INCORRECT" not in first and "CORRECT" in first
+    return correct, reply[:300]
 
 
 def upload(doc_path: Path) -> None:
@@ -88,7 +109,7 @@ def main() -> None:
     args = parser.parse_args()
 
     questions = json.loads((HERE / "questions.json").read_text())
-    judge = ChatGroq(model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"), temperature=0).with_structured_output(Verdict)
+    judge = ChatGroq(model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"), temperature=0)
 
     if not args.skip_upload:
         print("Uploading sample document...")
@@ -97,17 +118,22 @@ def main() -> None:
     results = []
     for q in questions:
         try:
-            out = ask(q["question"])
-            verdict = judge.invoke(JUDGE_PROMPT.format(
-                question=q["question"], reference=q["reference"], answer=out["answer"]))
-            out.update(correct=verdict.correct, judge_reason=verdict.reason)
-        except Exception as e:  # keep going; count as wrong
+            out = with_retries(ask, q["question"])
+        except Exception as e:  # backend failed every attempt; count as wrong
             out = {"answer": None, "route": None, "rewrites": 0, "latency_s": None,
-                   "correct": False, "judge_reason": f"error: {e}"}
+                   "correct": False, "judge_reason": f"backend error: {e}"}
+        if out["answer"] is not None:
+            try:
+                out["correct"], out["judge_reason"] = with_retries(judge_answer, judge, q, out["answer"])
+            except Exception as e:
+                out.update(correct=False, judge_reason=f"judge error: {e}")
         out.update(id=q["id"], type=q["type"], question=q["question"])
         results.append(out)
         print(f"{'PASS' if out['correct'] else 'FAIL'}  {q['id']}  route={out['route']}  "
               f"rewrites={out['rewrites']}  {out['latency_s']}s")
+        if out["answer"] is None or "error" in out["judge_reason"][:15]:
+            print(f"   {out['judge_reason'][:200]}")
+        time.sleep(DELAY_S)
 
     def acc(rows):
         return 100.0 * sum(r["correct"] for r in rows) / len(rows) if rows else 0.0
