@@ -154,7 +154,7 @@ Results returned to user
 ### ✅ **What Happens When You Upload Documents**
 - Your document is loaded from file
 - Split into chunks (1000 char, 150 overlap)
-- Embedded using OpenAI embeddings
+- Embedded with Sentence Transformers (all-MiniLM-L6-v2)
 - **Stored in FAISS vectorstore** via `retriever_chain()`
 - Available immediately for searches
 
@@ -231,7 +231,7 @@ Queries can now search BOTH documents!
 # When you upload documents:
 vectorstore = FAISS.from_documents(
     documents=chunks,  # Your real document chunks
-    embedding=embeddings  # OpenAI embeddings
+    embedding=embeddings  # Sentence Transformers embeddings
 )
 
 # FAISS creates embeddings for each chunk
