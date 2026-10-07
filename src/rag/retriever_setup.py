@@ -10,7 +10,7 @@ import os
 import threading
 from collections import OrderedDict
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
@@ -18,7 +18,21 @@ from src.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+_embeddings = None
+
+
+def get_embeddings() -> FastEmbedEmbeddings:
+    """
+    Load the embedding model on first use.
+
+    FastEmbed runs the model with ONNX Runtime, so there is no PyTorch
+    dependency; the ~90 MB model is downloaded once and cached.
+    """
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = FastEmbedEmbeddings(model_name=EMBEDDING_MODEL)
+    return _embeddings
 
 MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "50"))
 NO_DOCUMENTS = "No documents have been uploaded in this session yet."
@@ -39,7 +53,7 @@ def retriever_chain(chunks: list[Document], session_id: str) -> bool:
         True on success, False otherwise.
     """
     try:
-        store = FAISS.from_documents(documents=chunks, embedding=embeddings)
+        store = FAISS.from_documents(documents=chunks, embedding=get_embeddings())
     except Exception as e:
         logger.error("Error storing documents in FAISS: %s", e)
         return False

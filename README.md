@@ -43,7 +43,7 @@ flowchart TD
 |---|---|
 | Agent workflow | [LangGraph](https://langchain-ai.github.io/langgraph/) + LangChain |
 | LLM | [Groq](https://console.groq.com/docs/models), model set by `GROQ_MODEL` (tested with `openai/gpt-oss-120b`) |
-| Embeddings | [Sentence Transformers](https://www.sbert.net) (`all-MiniLM-L6-v2`) |
+| Embeddings | [FastEmbed](https://github.com/qdrant/fastembed) (`all-MiniLM-L6-v2`, ONNX, no PyTorch) |
 | Vector store | [FAISS](https://github.com/facebookresearch/faiss) |
 | Web search | [Tavily](https://tavily.com) |
 | Chat memory | MongoDB, or in-memory when no database is configured |
@@ -74,7 +74,7 @@ On this small, clean document every first retrieval was relevant, so no query re
 
 ## Getting started
 
-**Requirements:** Python 3.11, a [Groq API key](https://console.groq.com/keys) and a [Tavily API key](https://app.tavily.com).
+**Requirements:** Python 3.11 or 3.12, a [Groq API key](https://console.groq.com/keys) and a [Tavily API key](https://app.tavily.com).
 
 ```bash
 git clone https://github.com/Tejaswi75/Adaptive-RAG.git
@@ -109,7 +109,7 @@ streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 
 Set `EMBEDDED_BACKEND=true` and the Streamlit app runs the backend code in-process, so the whole project deploys as one Streamlit app:
 
-1. On [share.streamlit.io](https://share.streamlit.io), create an app from this repo, branch `main`, main file `streamlit_app/home.py`, Python 3.11 (Advanced settings).
+1. On [share.streamlit.io](https://share.streamlit.io), create an app from this repo, branch `main`, main file `streamlit_app/home.py`, Python 3.12 (Advanced settings; newer versions are not supported by the pinned dependencies).
 2. In **Secrets**, add:
    ```toml
    EMBEDDED_BACKEND = "true"

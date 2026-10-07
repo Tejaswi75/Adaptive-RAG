@@ -1,5 +1,3 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-
 langchain==0.2.16
 langgraph==0.2.34
 langchain-community==0.2.16
@@ -29,6 +27,5 @@ streamlit==1.38.0
 
 python-multipart==0.0.9
 
-torch
-sentence-transformers==3.0.1
+fastembed==0.4.2
 pypdf==5.0.0
