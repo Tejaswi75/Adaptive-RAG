@@ -10,6 +10,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 from src.core.config import settings
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -39,13 +42,13 @@ def retriever_chain(chunks: list[Document]):
 
         _faiss_vectorstore = vectorstore
 
-        print("FAISS vector store initialized with documents")
-        print(f"Vectorstore contains {len(chunks)} document chunks")
+        logger.info("FAISS vector store initialized with documents")
+        logger.info(f"Vectorstore contains {len(chunks)} document chunks")
 
         return True
 
     except Exception as e:
-        print(f"Error storing documents in FAISS: {e}")
+        logger.error(f"Error storing documents in FAISS: {e}")
         return False
 
 
@@ -62,10 +65,10 @@ def get_retriever():
         # Use existing vectorstore if documents were uploaded
         if _faiss_vectorstore is not None:
             retriever = _faiss_vectorstore.as_retriever()
-            print("Using existing FAISS vectorstore with uploaded documents")
+            logger.info("Using existing FAISS vectorstore with uploaded documents")
 
         else:
-            print("No documents uploaded yet, creating dummy vectorstore")
+            logger.info("No documents uploaded yet, creating dummy vectorstore")
 
             from langchain_core.documents import Document as LangChainDocument
 
@@ -110,5 +113,5 @@ Do not rely on general knowledge for document-related questions.
         return retriever_tool
 
     except Exception as e:
-        print(f"Error initializing retriever: {e}")
+        logger.error(f"Error initializing retriever: {e}")
         raise Exception(e)
