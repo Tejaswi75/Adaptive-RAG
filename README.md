@@ -105,9 +105,20 @@ streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 | `ENABLE_GRADER` | `true` | `false` skips grading and rewriting (evaluation ablation) |
 | `LOG_LEVEL` | `INFO` | `DEBUG` also logs retrieved context |
 
-### Deploy (Hugging Face Spaces)
+### Deploy (Streamlit Community Cloud, free)
 
-The `Dockerfile` runs both services in one container (API on 127.0.0.1:8000, UI on port 7860), which fits a free CPU Space. Create a **Docker** Space, add `GROQ_API_KEY`, `TAVILY_API_KEY` and `GROQ_MODEL` as Space secrets, and push the `hf-space` branch to it. That branch is a binary-free snapshot of `main` with the Space's README header, since Spaces reject plain-git binary files.
+Set `EMBEDDED_BACKEND=true` and the Streamlit app runs the backend code in-process, so the whole project deploys as one Streamlit app:
+
+1. On [share.streamlit.io](https://share.streamlit.io), create an app from this repo, branch `main`, main file `streamlit_app/home.py`, Python 3.11 (Advanced settings).
+2. In **Secrets**, add:
+   ```toml
+   EMBEDDED_BACKEND = "true"
+   GROQ_API_KEY = "..."
+   TAVILY_API_KEY = "..."
+   GROQ_MODEL = "openai/gpt-oss-120b"
+   ```
+
+For container platforms, the `Dockerfile` runs the API and UI together (UI on port 7860).
 
 ## API
 

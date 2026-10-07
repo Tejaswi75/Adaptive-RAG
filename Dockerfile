@@ -1,4 +1,4 @@
-# Single container for Hugging Face Spaces (Docker SDK):
+# Single container (e.g. Hugging Face Spaces Docker SDK, Render, Railway):
 # FastAPI backend on 127.0.0.1:8000, Streamlit UI on the public port 7860.
 FROM python:3.11-slim
 
