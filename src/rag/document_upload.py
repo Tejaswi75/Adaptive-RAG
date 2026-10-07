@@ -10,22 +10,22 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.rag.retriever_setup import retriever_chain
-from src.tools.common_tools import enhance_description_with_llm
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def documents(description: str, file: UploadFile = File(...)):
+def documents(description: str, file: UploadFile = File(...), session_id: str = "default"):
     """
     Process and upload a document for RAG.
 
-    Validates file type, loads content, enhances description, chunks documents,
+    Validates file type, loads content, chunks it,
     and stores them in the vector database.
 
     Args:
         description: User-provided document description.
         file: The uploaded file (PDF or TXT).
+        session_id: Chat session the document is indexed for.
 
     Returns:
         Boolean indicating success of the upload process.
@@ -67,14 +67,7 @@ def documents(description: str, file: UploadFile = File(...)):
     finally:
         os.unlink(tmp_path)
 
-    # Enhance description using LLM
-    description_llm = enhance_description_with_llm(description)
-
-    # Save enhanced description
-    with open("description.txt", "w", encoding="utf-8") as f:
-        f.write(description_llm)
-
-    logger.debug("Document description: %s", description_llm)
+    logger.info("Document description: %s", description[:100])
 
     # Split documents into chunks
     splitter = RecursiveCharacterTextSplitter(
@@ -86,7 +79,8 @@ def documents(description: str, file: UploadFile = File(...)):
 
     logger.info("Loaded %d pages, created %d chunks", len(docs), len(chunks))
 
-    if chunks:
-        logger.debug("First chunk: %s", chunks[0].page_content[:500])
+    if not chunks:
+        raise ValueError("No text found in the file. Is it a scanned/image-only PDF?")
+    logger.debug("First chunk: %s", chunks[0].page_content[:500])
 
-    return retriever_chain(chunks)
+    return retriever_chain(chunks, session_id)

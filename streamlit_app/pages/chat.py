@@ -30,6 +30,7 @@ with col2:
     if st.button("🔄 New chat", use_container_width=True):
         st.session_state["session_id"] = str(uuid.uuid4())
         st.session_state.chat_history = []
+        st.session_state.uploaded_files = {}  # a new chat starts without documents
         st.rerun()
 
 st.title("💬 Adaptive RAG Chat")
@@ -56,7 +57,7 @@ with st.sidebar:
         if file_description:
             if file_key not in st.session_state.uploaded_files:
                 # Upload file if not already uploaded
-                success = document_upload_rag(uploaded_file, file_description)
+                success = document_upload_rag(uploaded_file, file_description, st.session_state["session_id"])
                 if success:
                     st.success(f"Uploaded: {uploaded_file.name}")
                     st.session_state.uploaded_files[file_key] = True

@@ -33,7 +33,9 @@ async def rag_query(req: QueryRequest):
 
     # The graph is synchronous; run it in a worker thread so one slow query
     # doesn't block the server for everyone else.
-    result = await asyncio.to_thread(builder.invoke, {"messages": messages})
+    result = await asyncio.to_thread(
+        builder.invoke, {"messages": messages, "session_id": req.session_id}
+    )
 
     output_text = result["messages"][-1].content
 
@@ -51,13 +53,14 @@ async def rag_query(req: QueryRequest):
 @router.post("/rag/documents/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    description: str = Header(..., alias="X-Description")
+    description: str = Header(..., alias="X-Description"),
+    session_id: str = Header("default", alias="X-Session-Id"),
 ):
     """
     Upload a document for RAG processing.
     """
     try:
-        status_upload = await asyncio.to_thread(documents, description, file)
+        status_upload = await asyncio.to_thread(documents, description, file, session_id)
 
         return {
             "status": status_upload

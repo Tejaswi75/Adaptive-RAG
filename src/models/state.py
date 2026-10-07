@@ -16,3 +16,4 @@ class State(TypedDict):
     route: Optional[str]
     latest_query: Optional[str]
     rewrite_count: Optional[int]
+    session_id: Optional[str]

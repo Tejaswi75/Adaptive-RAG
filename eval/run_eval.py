@@ -2,7 +2,7 @@
 Evaluate the Adaptive RAG backend end to end.
 
 Uploads eval/sample_doc.txt, sends every question in eval/questions.json to
-/rag/query (each in a fresh session), and uses an LLM judge (Groq) to score
+/rag/query (in the session the document was uploaded to), and uses an LLM judge (Groq) to score
 each answer against a reference. Reports answer accuracy, routing accuracy,
 query rewrites and latency, and saves per-question results as JSON.
 
@@ -30,6 +30,7 @@ load_dotenv()
 
 HERE = Path(__file__).parent
 BACKEND = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+SESSION = f"eval-{uuid.uuid4()}"  # documents are indexed per session
 
 
 JUDGE_PROMPT = """You are grading a question-answering system.
@@ -76,7 +77,8 @@ def upload(doc_path: Path) -> None:
         r = requests.post(
             f"{BACKEND}/rag/documents/upload",
             files={"file": (doc_path.name, f, "text/plain")},
-            headers={"X-Description": "Employee handbook of Nimbus Robotics, a warehouse robotics company"},
+            headers={"X-Description": "Employee handbook of Nimbus Robotics, a warehouse robotics company",
+                     "X-Session-Id": SESSION},
             timeout=300,
         )
     r.raise_for_status()
@@ -88,7 +90,7 @@ def ask(question: str) -> dict:
     t0 = time.perf_counter()
     r = requests.post(
         f"{BACKEND}/rag/query",
-        json={"query": question, "session_id": f"eval-{uuid.uuid4()}"},
+        json={"query": question, "session_id": SESSION},
         timeout=300,
     )
     latency = time.perf_counter() - t0

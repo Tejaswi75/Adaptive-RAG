@@ -42,7 +42,7 @@ flowchart TD
 | Component | Technology |
 |---|---|
 | Agent workflow | [LangGraph](https://langchain-ai.github.io/langgraph/) + LangChain |
-| LLM | [Groq](https://console.groq.com/docs/models) (Llama 3.3 70B) |
+| LLM | [Groq](https://console.groq.com/docs/models), model set by `GROQ_MODEL` (tested with `openai/gpt-oss-120b`) |
 | Embeddings | [Sentence Transformers](https://www.sbert.net) (`all-MiniLM-L6-v2`) |
 | Vector store | [FAISS](https://github.com/facebookresearch/faiss) |
 | Web search | [Tavily](https://tavily.com) |
@@ -105,11 +105,15 @@ streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 | `ENABLE_GRADER` | `true` | `false` skips grading and rewriting (evaluation ablation) |
 | `LOG_LEVEL` | `INFO` | `DEBUG` also logs retrieved context |
 
+### Deploy (Hugging Face Spaces)
+
+The `Dockerfile` runs both services in one container (API on 127.0.0.1:8000, UI on port 7860), which fits a free CPU Space. Create a **Docker** Space, add `GROQ_API_KEY`, `TAVILY_API_KEY` and `GROQ_MODEL` as Space secrets, and push the `hf-space` branch to it. That branch is a binary-free snapshot of `main` with the Space's README header, since Spaces reject plain-git binary files.
+
 ## API
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/rag/documents/upload` | Multipart `file` (PDF/TXT) plus an `X-Description` header describing the document |
+| `POST` | `/rag/documents/upload` | Multipart `file` (PDF/TXT), `X-Description` header, and `X-Session-Id` header (the chat session to index it for) |
 | `POST` | `/rag/query` | Body `{"query": "...", "session_id": "..."}`; returns the answer, the route taken and the number of rewrites |
 
 ## Project structure
@@ -128,13 +132,13 @@ Adaptive-RAG/
 │   └── tools/          Routing and grading logic
 ├── streamlit_app/      Chat UI
 ├── eval/               Evaluation set and runner
-└── docs/               Document-upload flow notes
+└── docs/               Screenshots
 ```
 
 ## Known limitations
 
-- The FAISS index lives in memory and is shared by all sessions; it resets when the backend restarts.
-- One document description is kept at a time (`description.txt`), so the agent works best with one uploaded document.
+- Each chat session has its own FAISS index (the last `MAX_SESSIONS`, default 50, are kept). Indexes live in memory and reset when the backend restarts; starting a new chat starts without documents.
+- Uploading another file in the same session replaces the previous one.
 
 ## Author
 

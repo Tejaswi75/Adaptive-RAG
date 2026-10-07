@@ -1,117 +1,77 @@
 """
-Retriever setup and vector store configuration.
+Per-session FAISS vector stores for uploaded documents.
+
+Each chat session gets its own index, so one visitor's upload never answers
+another visitor's questions. Only the most recent MAX_SESSIONS indexes are
+kept in memory; indexes are lost when the backend restarts.
 """
 
 import os
+import threading
+from collections import OrderedDict
 
-from langchain_core.documents import Document
-from langchain_core.tools import create_retriever_tool
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 
-from src.core.config import settings
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-# Global variable to store the FAISS vectorstore instance
-_faiss_vectorstore = None
+MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "50"))
+NO_DOCUMENTS = "No documents have been uploaded in this session yet."
+
+_stores: "OrderedDict[str, FAISS]" = OrderedDict()
+_lock = threading.Lock()
 
 
-def retriever_chain(chunks: list[Document]):
+def retriever_chain(chunks: list[Document], session_id: str) -> bool:
     """
-    Initialize and store documents in FAISS vector database.
+    Embed document chunks into a new FAISS index for this session.
 
     Args:
-        chunks: List of document chunks to store.
+        chunks: Document chunks to index.
+        session_id: Chat session the document belongs to.
 
     Returns:
-        Boolean indicating success of the operation.
+        True on success, False otherwise.
     """
-    global _faiss_vectorstore
-
     try:
-        vectorstore = FAISS.from_documents(
-            documents=chunks,
-            embedding=embeddings
-        )
-
-        _faiss_vectorstore = vectorstore
-
-        logger.info("FAISS vector store initialized with documents")
-        logger.info(f"Vectorstore contains {len(chunks)} document chunks")
-
-        return True
-
+        store = FAISS.from_documents(documents=chunks, embedding=embeddings)
     except Exception as e:
-        logger.error(f"Error storing documents in FAISS: {e}")
+        logger.error("Error storing documents in FAISS: %s", e)
         return False
 
+    with _lock:
+        _stores[session_id] = store
+        _stores.move_to_end(session_id)
+        while len(_stores) > MAX_SESSIONS:
+            _stores.popitem(last=False)
 
-def get_retriever():
-    """
-    Get a retriever tool connected to the FAISS vector store.
+    logger.info("Indexed %d chunks for session %s", len(chunks), session_id[:8])
+    return True
 
-    Returns:
-        A LangChain retriever tool configured for the vector store.
-    """
-    global _faiss_vectorstore
 
-    try:
-        # Use existing vectorstore if documents were uploaded
-        if _faiss_vectorstore is not None:
-            retriever = _faiss_vectorstore.as_retriever()
-            logger.info("Using existing FAISS vectorstore with uploaded documents")
+class SessionRetriever:
+    """Returns the most relevant chunks of a session's document as one string."""
 
-        else:
-            logger.info("No documents uploaded yet, creating dummy vectorstore")
+    def __init__(self, session_id: str, k: int = 4):
+        self.session_id = session_id
+        self.k = k
 
-            from langchain_core.documents import Document as LangChainDocument
+    def invoke(self, query: str) -> str:
+        with _lock:
+            store = _stores.get(self.session_id)
+            if store is not None:
+                _stores.move_to_end(self.session_id)
+        if store is None:
+            return NO_DOCUMENTS
+        docs = store.similarity_search(query, k=self.k)
+        return "\n\n".join(d.page_content for d in docs)
 
-            dummy_doc = LangChainDocument(
-                page_content="No documents have been uploaded yet. Please upload a document first.",
-                metadata={"source": "initialization"}
-            )
 
-            _faiss_vectorstore = FAISS.from_documents(
-                documents=[dummy_doc],
-                embedding=embeddings
-            )
-
-            retriever = _faiss_vectorstore.as_retriever()
-
-        # Load description if present
-        if os.path.exists("description.txt"):
-            with open("description.txt", "r", encoding="utf-8") as f:
-                description = f.read()
-        else:
-            description = ""
-
-        retriever_tool = create_retriever_tool(
-            retriever,
-            "retriever_customer_uploaded_documents",
-            """
-Use this tool whenever the user asks anything about the uploaded document.
-
-Examples:
-- What is my name?
-- What is my education?
-- What skills do I have?
-- What projects are listed?
-- Summarize my resume.
-- Tell me about myself.
-
-Always search the uploaded document before answering.
-Do not rely on general knowledge for document-related questions.
-"""
-        )
-
-        return retriever_tool
-
-    except Exception as e:
-        logger.error(f"Error initializing retriever: {e}")
-        raise Exception(e)
+def get_retriever(session_id: str = "default") -> SessionRetriever:
+    """Return the retriever for a chat session."""
+    return SessionRetriever(session_id)

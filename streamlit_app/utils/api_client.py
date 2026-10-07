@@ -39,19 +39,21 @@ def query_backend(query: str, session_id: str) -> str:
         return f"Error: {response.status_code} - {response.text}"
 
 
-def document_upload_rag(file, description: str) -> bool:
+def document_upload_rag(file, description: str, session_id: str) -> bool:
     """
     Upload a document to the RAG system.
 
     Args:
         file: File object to upload.
         description: Description of the document.
+        session_id: Chat session the document belongs to.
 
     Returns:
         True if upload succeeds, False otherwise.
     """
     headers = {
-        "X-Description": description
+        "X-Description": description,
+        "X-Session-Id": session_id,
     }
     url = f"{PYTHON_BASE_URL}/rag/documents/upload"
 

@@ -40,7 +40,7 @@ def query_classifier(state: State):
 
     question = state["messages"][-1].content
 
-    retriever = get_retriever()
+    retriever = get_retriever(state.get("session_id") or "default")
     context = retriever.invoke(question)
 
     logger.debug("Question: %s", question)
@@ -93,7 +93,7 @@ def retriever_node(state: State):
         dict: The retrieved context as a message for the grader / generator.
     """
     query = state["latest_query"]
-    context = get_retriever().invoke(query)
+    context = get_retriever(state.get("session_id") or "default").invoke(query)
     logger.debug("Retrieved for %r: %s", query, context)
 
     return {"messages": [AIMessage(content=context)]}
