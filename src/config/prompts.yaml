@@ -44,6 +44,8 @@ prompts:
     Context:
     {context}
 
+    Respond with exactly one word: index, general or search.
+
     Classification:
 
   grading_prompt: |

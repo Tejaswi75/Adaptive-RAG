@@ -46,7 +46,7 @@ def get_agent_executor():
         agent=react_agent,
         tools=tools,
         handle_parsing_errors=True,
-        max_iterations=2,
-        verbose=True,
+        max_iterations=4,  # one retrieval + answer, with room for a format retry
+        verbose=False,
         return_intermediate_steps=True
     )

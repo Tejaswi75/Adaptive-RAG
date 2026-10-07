@@ -13,13 +13,27 @@ from src.rag.retriever_setup import get_retriever
 from src.config.settings import Config
 from src.core.logger import get_logger
 from src.llms.groq_llm import llm
-from src.models.grade import Grade
-from src.models.route_identifier import RouteIdentifier
+import re
 from src.models.state import State
 from src.tools.graph_tools import routing_tool, doc_tool, GRADER_ENABLED
 
 config = Config()
 logger = get_logger(__name__)
+
+
+def first_label(text: str, labels: tuple, default: str) -> str:
+    """
+    Return whichever label appears first (as a whole word) in an LLM reply.
+
+    Parsing plain text instead of forcing tool-calling structured output keeps
+    the graph working with models that answer with a bare word.
+    """
+    found = [
+        (m.start(), label)
+        for label in labels
+        if (m := re.search(rf"\b{label}\b", (text or "").lower()))
+    ]
+    return min(found)[1] if found else default
 
 
 # Node implementations
@@ -33,18 +47,18 @@ def query_classifier(state: State):
     logger.debug("Question: %s", question)
     logger.debug("Retrieved context: %s", context)
 
-    llm_with_structured_output = llm.with_structured_output(RouteIdentifier)
     classify_prompt = PromptTemplate(
         template=config.prompt("classify_prompt"),
         input_variables=["question", "context"]
     )
-    chain = classify_prompt | llm_with_structured_output
-    result = chain.invoke({"question": question, "context": context})
-    logger.info("Query routed to: %s", result.route)
+    chain = classify_prompt | llm
+    reply = chain.invoke({"question": question, "context": context}).content
+    route = first_label(reply, ("index", "general", "search"), default="general")
+    logger.info("Query routed to: %s", route)
 
     return {
         "messages": state["messages"],
-        "route": result.route,
+        "route": route,
         "latest_query": question,
         "rewrite_count": 0,
     }
@@ -116,13 +130,12 @@ def grade(state: State):
     context = state["messages"][-1].content
     question = state["latest_query"]
 
-    llm_with_grade = llm.with_structured_output(Grade)
+    chain_graded = grading_prompt | llm
+    reply = chain_graded.invoke({"question": question, "context": context}).content
+    score = first_label(reply, ("yes", "no"), default="no")
 
-    chain_graded = grading_prompt | llm_with_grade
-    result = chain_graded.invoke({"question": question, "context": context})
-
-    logger.info("Relevance grade: %s", result.binary_score)
-    return {"messages": state["messages"], "binary_score": result.binary_score}
+    logger.info("Relevance grade: %s", score)
+    return {"messages": state["messages"], "binary_score": score}
 
 
 def rewrite_query(state: State):
