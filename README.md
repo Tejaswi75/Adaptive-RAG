@@ -7,10 +7,7 @@
 
 A retrieval-augmented chatbot whose LangGraph agent decides **how** to answer each question: from your uploaded documents, from the LLM's general knowledge, or from a live web search. Retrieved documents are graded for relevance; if they miss, the query is rewritten and retried, and after two failed attempts the agent falls back to web search.
 
-<!--
-  Add a screenshot or GIF here once recorded, e.g.:
-  ![Chat UI](docs/screenshots/chat.png)
--->
+![Adaptive RAG chat answering a question about an uploaded resume](docs/screenshots/chat.png)
 
 ## How it works
 

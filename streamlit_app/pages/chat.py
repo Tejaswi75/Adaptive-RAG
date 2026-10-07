@@ -83,4 +83,5 @@ if user_input:
 
 # Display chat history
 for role, text in st.session_state.chat_history:
-    st.chat_message(role).write(text)
+    # Models sometimes put <br> inside Markdown table cells; Streamlit shows it literally.
+    st.chat_message(role).markdown(text.replace("<br>", " "))
