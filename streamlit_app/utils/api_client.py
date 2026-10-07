@@ -60,7 +60,9 @@ def document_upload_rag(file, description: str) -> bool:
         response = requests.post(url, files=files, headers=headers)
         logger.info("Upload response: %s", response.status_code)
 
-        if response.status_code == 200:
+        # The backend returns 200 with {"status": false, "error": ...} on failure
+        if response.status_code == 200 and response.json().get("status"):
             return True
+        logger.error("Upload failed: %s", response.text)
 
     return False

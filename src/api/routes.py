@@ -2,10 +2,12 @@
 API routes for RAG operations.
 """
 
+import asyncio
+
 from fastapi import APIRouter, UploadFile, File, Header
 from langchain_core.messages import HumanMessage, AIMessage
 
-from src.memory.chat_history_mongo import ChatHistory
+from src.memory import get_session_history
 from src.models.query_request import QueryRequest
 from src.rag.document_upload import documents
 from src.rag.graph_builder import builder
@@ -21,7 +23,7 @@ async def rag_query(req: QueryRequest):
     """
     Process a RAG query and return the result.
     """
-    chat_history = ChatHistory.get_session_history(req.session_id)
+    chat_history = get_session_history(req.session_id)
 
     await chat_history.add_message(
         HumanMessage(content=req.query)
@@ -29,9 +31,9 @@ async def rag_query(req: QueryRequest):
 
     messages = await chat_history.get_messages()
 
-    result = builder.invoke({
-        "messages": messages
-    })
+    # The graph is synchronous; run it in a worker thread so one slow query
+    # doesn't block the server for everyone else.
+    result = await asyncio.to_thread(builder.invoke, {"messages": messages})
 
     output_text = result["messages"][-1].content
 
@@ -55,7 +57,7 @@ async def upload_file(
     Upload a document for RAG processing.
     """
     try:
-        status_upload = documents(description, file)
+        status_upload = await asyncio.to_thread(documents, description, file)
 
         return {
             "status": status_upload

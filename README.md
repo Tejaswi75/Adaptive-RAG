@@ -49,7 +49,7 @@ flowchart TD
 | Embeddings | [Sentence Transformers](https://www.sbert.net) (`all-MiniLM-L6-v2`) |
 | Vector store | [FAISS](https://github.com/facebookresearch/faiss) |
 | Web search | [Tavily](https://tavily.com) |
-| Chat memory | MongoDB (per-session history) |
+| Chat memory | MongoDB, or in-memory when no database is configured |
 | Backend / frontend | FastAPI / Streamlit |
 
 ## Evaluation
@@ -74,7 +74,7 @@ It reports document-QA accuracy, routing accuracy, how often a rewrite was neede
 
 ## Getting started
 
-**Requirements:** Python 3.11, MongoDB (local or [Atlas](https://www.mongodb.com/atlas) free tier), a [Groq API key](https://console.groq.com/keys) and a [Tavily API key](https://app.tavily.com).
+**Requirements:** Python 3.11, a [Groq API key](https://console.groq.com/keys) and a [Tavily API key](https://app.tavily.com).
 
 ```bash
 git clone https://github.com/Tejaswi75/Adaptive-RAG.git
@@ -98,7 +98,7 @@ streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 |---|---|---|
 | `GROQ_API_KEY` | — | LLM inference (required) |
 | `TAVILY_API_KEY` | — | Web search (required) |
-| `MONGO_URI` | `mongodb://localhost:27017` | Chat history |
+| `MONGO_URI` | unset | MongoDB for chat history. If unset, history is kept in memory (lost on restart) |
 | `BACKEND_URL` | `http://127.0.0.1:8000` | Where the Streamlit UI reaches the API |
 | `MAX_REWRITES` | `2` | Query rewrites before falling back to web search |
 | `ENABLE_GRADER` | `true` | `false` skips grading and rewriting (evaluation ablation) |
