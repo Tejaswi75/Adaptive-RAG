@@ -84,6 +84,9 @@ prompts:
 
       The information is not available in the uploaded document.
 
+    Question:
+    {question}
+
     Context:
     {context}
 

@@ -9,6 +9,9 @@ from src.memory.chat_history_mongo import ChatHistory
 from src.models.query_request import QueryRequest
 from src.rag.document_upload import documents
 from src.rag.graph_builder import builder
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -36,7 +39,11 @@ async def rag_query(req: QueryRequest):
         AIMessage(content=output_text)
     )
 
-    return {"result": result["messages"][-1]}
+    return {
+        "result": result["messages"][-1],
+        "route": result.get("route"),
+        "rewrites": result.get("rewrite_count") or 0,
+    }
 
 
 @router.post("/rag/documents/upload")
@@ -55,11 +62,7 @@ async def upload_file(
         }
 
     except Exception as e:
-        import traceback
-
-        print("\n========== DOCUMENT UPLOAD ERROR ==========")
-        traceback.print_exc()
-        print("==========================================\n")
+        logger.exception("Document upload failed")
 
         return {
             "status": False,
