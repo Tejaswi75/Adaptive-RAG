@@ -5,7 +5,6 @@ langgraph==0.2.34
 langchain-community==0.2.16
 langchain-core==0.2.41
 langchain-groq==0.1.10
-langchain-openai==0.1.25
 
 faiss-cpu==1.8.0.post1
 tavily-python==0.5.0
@@ -28,7 +27,6 @@ pymongo==4.9.1
 
 streamlit==1.38.0
 
-langchain-qdrant==0.1.4
 python-multipart==0.0.9
 
 torch
