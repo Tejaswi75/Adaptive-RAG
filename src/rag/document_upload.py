@@ -11,6 +11,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.rag.retriever_setup import retriever_chain
 from src.tools.common_tools import enhance_description_with_llm
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def documents(description: str, file: UploadFile = File(...)):
@@ -31,7 +34,7 @@ def documents(description: str, file: UploadFile = File(...)):
         HTTPException: If file type is not supported or loading fails.
     """
     filename = file.filename
-    print(filename)
+    logger.info("Uploading %s", filename)
     if not filename.endswith(".pdf") and not filename.endswith(".txt"):
         from fastapi import HTTPException
         raise HTTPException(
@@ -71,11 +74,9 @@ def documents(description: str, file: UploadFile = File(...)):
     with open("description.txt", "w", encoding="utf-8") as f:
         f.write(description_llm)
 
-    with open("description.txt", "r", encoding="utf-8") as f:
-        print("Document description from storage:")
-        print(f.read())
+    logger.debug("Document description: %s", description_llm)
 
-        # Split documents into chunks
+    # Split documents into chunks
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=150
@@ -83,14 +84,9 @@ def documents(description: str, file: UploadFile = File(...)):
 
     chunks = splitter.split_documents(docs)
 
-    print("=" * 50)
-    print(f"Loaded pages: {len(docs)}")
-    print(f"Created chunks: {len(chunks)}")
+    logger.info("Loaded %d pages, created %d chunks", len(docs), len(chunks))
 
-    if len(chunks) > 0:
-        print("FIRST CHUNK:")
-        print(chunks[0].page_content[:500])
-
-    print("=" * 50)
+    if chunks:
+        logger.debug("First chunk: %s", chunks[0].page_content[:500])
 
     return retriever_chain(chunks)

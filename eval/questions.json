@@ -1,0 +1,22 @@
+[
+  {"id": "d01", "type": "index", "question": "Who founded Nimbus Robotics and when?", "reference": "Meera Kapoor and Daniel Okafor founded it in 2019 (in Pune)."},
+  {"id": "d02", "type": "index", "question": "How much weight can the Courier-7 carry?", "reference": "Up to 45 kilograms."},
+  {"id": "d03", "type": "index", "question": "How long does the Courier-7 battery last?", "reference": "9 hours on a single charge."},
+  {"id": "d04", "type": "index", "question": "Who is the main customer for the Courier-3?", "reference": "Pharmacies."},
+  {"id": "d05", "type": "index", "question": "Who leads the Perception team?", "reference": "Arjun Mehta."},
+  {"id": "d06", "type": "index", "question": "Which team maintains the customer dashboard and who leads it?", "reference": "Fleet Software, led by Sofia Lindqvist."},
+  {"id": "d07", "type": "index", "question": "What are the core working hours?", "reference": "11:00 to 16:00 IST."},
+  {"id": "d08", "type": "index", "question": "How many days of paid leave do employees get, and how many can be carried over?", "reference": "24 days per year; up to 8 days can be carried over."},
+  {"id": "d09", "type": "index", "question": "Can people on the hardware team work from home?", "reference": "No, the Hardware team is exempt from remote work because of lab access."},
+  {"id": "d10", "type": "index", "question": "What is the yearly learning budget?", "reference": "INR 60,000 per year."},
+  {"id": "d11", "type": "index", "question": "When does a learning request need manager approval?", "reference": "When it is above INR 20,000."},
+  {"id": "d12", "type": "index", "question": "How quickly must a sev-1 incident be acknowledged?", "reference": "Within 15 minutes."},
+  {"id": "d13", "type": "index", "question": "What's the on-call allowance?", "reference": "INR 5,000 per week."},
+  {"id": "d14", "type": "index", "question": "What should I do if I lose my laptop?", "reference": "Report it to the IT helpdesk within 2 hours."},
+  {"id": "d15", "type": "index", "question": "How much is the referral bonus and what is the condition?", "reference": "INR 50,000, if the referred candidate is hired and stays 90 days."},
+  {"id": "d16", "type": "index", "question": "List the rounds in the interview process.", "reference": "Recruiter screen, technical screen, on-site system design round, final culture round."},
+  {"id": "d17", "type": "index", "question": "how far is the factory from the office", "reference": "About 30 kilometres (Chakan factory from the Pune head office)."},
+  {"id": "g01", "type": "general", "question": "What is the difference between a list and a tuple in Python?", "reference": "Lists are mutable; tuples are immutable."},
+  {"id": "g02", "type": "general", "question": "Explain what a binary search tree is in one sentence.", "reference": "A binary tree where each node's left subtree has smaller keys and right subtree has larger keys."},
+  {"id": "s01", "type": "search", "question": "What is the latest stable version of Python released this year?", "reference": "Any answer citing a current Python release; judged on whether it uses web results rather than refusing."}
+]

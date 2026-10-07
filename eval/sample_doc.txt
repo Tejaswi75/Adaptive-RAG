@@ -1,0 +1,22 @@
+Nimbus Robotics — Employee Handbook (Fictional, for evaluation only)
+
+1. About the company
+Nimbus Robotics was founded in 2019 by Meera Kapoor and Daniel Okafor in Pune. The company builds autonomous warehouse robots. Its flagship product is the Courier-7, a shelf-picking robot that can carry up to 45 kilograms and runs for 9 hours on a single charge. A smaller model, the Courier-3, carries up to 15 kilograms and is sold mainly to pharmacies.
+
+2. Teams
+The engineering organisation has four teams: Perception, Motion Planning, Fleet Software and Hardware. The Perception team is led by Arjun Mehta and owns the camera and lidar pipeline. Fleet Software is led by Sofia Lindqvist and maintains the dashboard customers use to monitor their robots. The Hardware team works out of the Chakan factory, about 30 kilometres from the Pune head office.
+
+3. Working hours and leave
+Core working hours are 11:00 to 16:00 IST; outside these hours employees can choose their own schedule. Every employee receives 24 days of paid leave per year, plus 10 public holidays. Unused leave of up to 8 days can be carried over to the next year. Employees may work remotely up to 2 days per week; the Hardware team is exempt from remote work because of lab access.
+
+4. Learning budget
+Each employee has an annual learning budget of INR 60,000 that can be spent on courses, books and conference tickets. Requests above INR 20,000 need approval from the employee's manager. Unspent budget does not roll over.
+
+5. On-call
+Fleet Software runs a weekly on-call rotation that starts every Monday at 10:00 IST. On-call engineers receive an allowance of INR 5,000 per week. Severity-1 incidents must be acknowledged within 15 minutes.
+
+6. Security
+Laptops must use full-disk encryption. Passwords are managed with the company password manager, and two-factor authentication is mandatory for all internal tools. Lost devices must be reported to the IT helpdesk within 2 hours.
+
+7. Hiring and referrals
+Employees who refer a candidate who is hired and stays for 90 days receive a referral bonus of INR 50,000. The standard interview process has four rounds: a recruiter screen, a technical screen, an on-site system design round and a final culture round.

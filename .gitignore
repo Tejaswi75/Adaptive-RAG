@@ -5,3 +5,5 @@ __pycache__/
 .DS_Store
 .idea/
 app.log
+description.txt
+eval/results/

@@ -1,43 +1,28 @@
 """
 In-memory chat history storage.
+
+Used when MONGO_URI is not set, so the app runs locally without a database.
+History is lost when the backend restarts.
 """
 
-from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_community.chat_message_histories import ChatMessageHistory
+from typing import Dict, List
+
+from langchain_core.messages import BaseMessage
 
 
-class ChatInMemoryHistory:
-    """In-memory chat history storage."""
+class InMemoryChatMessageHistory:
+    """Async chat history kept in process memory (same interface as the MongoDB one)."""
 
-    store = {}
+    _store: Dict[str, List[BaseMessage]] = {}
 
-    @classmethod
-    def get_session_history(
-        cls,
-        session_id: str,
-        config: dict = None
-    ) -> BaseChatMessageHistory:
-        """
-        Get or create chat history for a session.
+    def __init__(self, session_id: str):
+        self.session_id = session_id
 
-        Args:
-            session_id: Unique session identifier.
-            config: Optional configuration dictionary.
+    async def add_message(self, message: BaseMessage) -> None:
+        self._store.setdefault(self.session_id, []).append(message)
 
-        Returns:
-            ChatMessageHistory instance for the session.
-        """
-        if session_id not in cls.store:
-            cls.store[session_id] = ChatMessageHistory()
-        return cls.store[session_id]
+    async def get_messages(self) -> List[BaseMessage]:
+        return list(self._store.get(self.session_id, []))
 
-    @classmethod
-    def clear_history(cls, session_id: str):
-        """
-        Clear chat history for a session.
-
-        Args:
-            session_id: Unique session identifier.
-        """
-        if session_id in cls.store:
-            del cls.store[session_id]
+    async def clear(self) -> None:
+        self._store.pop(self.session_id, None)

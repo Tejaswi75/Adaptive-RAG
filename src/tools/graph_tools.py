@@ -2,16 +2,24 @@
 Tools for graph routing and document grading.
 """
 
+import os
 from typing import Literal
 
 from langchain_core.prompts import PromptTemplate
 
 from src.config.settings import Config
-from src.llms.openai import llm
+from src.core.logger import get_logger
+from src.llms.groq_llm import llm
 from src.models.state import State
 from src.models.verification_result import VerificationResult
 
 config = Config()
+logger = get_logger(__name__)
+
+# Max query rewrites before falling back to web search (prevents infinite loops).
+MAX_REWRITES = int(os.getenv("MAX_REWRITES", "2"))
+# Set ENABLE_GRADER=false to skip grading/rewriting (used for evaluation ablation).
+GRADER_ENABLED = os.getenv("ENABLE_GRADER", "true").lower() != "false"
 
 
 def routing_tool(state: State) -> Literal["retriever", "general_llm", "web_search"]:
@@ -32,22 +40,25 @@ def routing_tool(state: State) -> Literal["retriever", "general_llm", "web_searc
         return "web_search"
 
 
-def doc_tool(state: State) -> Literal["rewrite", "generate"]:
+def doc_tool(state: State) -> Literal["rewrite", "generate", "web_search"]:
     """
-    Determine whether the query needs rewriting based on grading score.
+    Decide what to do after grading the retrieved documents.
 
     Args:
         state (State): The current state of the graph.
 
     Returns:
-        The next node: "generate" if score is "yes", otherwise "rewrite".
+        "generate" if the documents are relevant, "rewrite" to retry retrieval
+        with a reformulated query, or "web_search" once MAX_REWRITES is reached.
     """
-    score = state["binary_score"]
-    print(f"[doc_tool] Routing based on score: {score}")
+    score = (state.get("binary_score") or "").strip().lower()
+    rewrites = state.get("rewrite_count") or 0
     if score == "yes":
         return "generate"
-    else:
-        return "rewrite"
+    if rewrites >= MAX_REWRITES:
+        logger.info("No relevant documents after %d rewrites; falling back to web search", rewrites)
+        return "web_search"
+    return "rewrite"
 
 
 def verify_answer(state: State) -> Literal["__end__", "generate"]:
@@ -84,5 +95,5 @@ def verify_answer(state: State) -> Literal["__end__", "generate"]:
     if result.faithful:
         return "__end__"
     else:
-        print("Generating again as answer is not faithful.")
+        logger.info("Answer not faithful to context; regenerating")
         return "generate"

@@ -1,24 +1,4 @@
 prompts:
-  system_prompt: |
-    You are a helpful AI agent.
-    You MUST use tools to answer the question. Never answer directly.
-
-    Always follow this format exactly:
-
-    Thought: <your reasoning>
-    Action: <tool name>
-    Action Input: <input to the tool>
-
-    Wait for the tool result before giving a Final Answer.
-
-    Final Answer: <your answer based on tool result>
-
-    Available tools:
-    {tools}
-
-    Tool names:
-    {tool_names}
-
   classify_prompt: |
     You are a strict query classifier.
 
@@ -43,6 +23,8 @@ prompts:
 
     Context:
     {context}
+
+    Respond with exactly one word: index, general or search.
 
     Classification:
 
@@ -83,6 +65,9 @@ prompts:
     - If the answer is not present in the context, respond exactly with:
 
       The information is not available in the uploaded document.
+
+    Question:
+    {question}
 
     Context:
     {context}
