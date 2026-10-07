@@ -8,7 +8,6 @@ from langchain_core.prompts import PromptTemplate
 from langgraph.constants import START, END
 from langgraph.graph.state import StateGraph
 
-from src.rag.reAct_agent import get_agent_executor
 from src.rag.retriever_setup import get_retriever
 from src.config.settings import Config
 from src.core.logger import get_logger
@@ -81,36 +80,23 @@ def general_llm(state: State):
 
 def retriever_node(state: State):
     """
-    Retrieve results from vector stores using the reAct agent.
+    Retrieve the most relevant chunks of the uploaded document from FAISS.
+
+    Retrieval is a direct similarity search rather than an LLM agent: with a
+    single retriever tool an agent adds latency and LLM calls, and its
+    text-based tool-call format breaks on models with native tool calling.
 
     Args:
         state (State): The current state of the graph.
 
     Returns:
-        dict: Updated messages with tool calls.
+        dict: The retrieved context as a message for the grader / generator.
     """
-    messages = state["latest_query"]
-    agent_executor = get_agent_executor()
-    result = agent_executor.invoke({"input": messages})
+    query = state["latest_query"]
+    context = get_retriever().invoke(query)
+    logger.debug("Retrieved for %r: %s", query, context)
 
-    # Extract tool calls
-    intermediate_steps = result.get("intermediate_steps", [])
-    tool_calls = []
-    if intermediate_steps:
-        for action, tool_result in intermediate_steps:
-            tool_calls.append({
-                "tool": action.tool,
-                "input": action.tool_input,
-            })
-
-    new_message = AIMessage(
-        content=result["output"],
-        additional_kwargs={"tool_calls": tool_calls},
-    )
-
-    return {
-        "messages": [new_message]
-    }
+    return {"messages": [AIMessage(content=context)]}
 
 
 def grade(state: State):

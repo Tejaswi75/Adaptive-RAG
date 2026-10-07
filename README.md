@@ -17,7 +17,7 @@ A retrieval-augmented chatbot whose LangGraph agent decides **how** to answer ea
 ```mermaid
 flowchart TD
     Q([User question]) --> A[query_analysis<br/>classify: index / general / search]
-    A -- index --> R[retriever<br/>ReAct agent + FAISS]
+    A -- index --> R[retriever<br/>FAISS similarity search]
     A -- general --> L[general_llm]
     A -- search --> W[web_search<br/>Tavily]
     R --> G{grade<br/>relevant?}
@@ -33,7 +33,7 @@ flowchart TD
 | Node | What it does |
 |---|---|
 | `query_analysis` | Retrieves candidate context and asks the LLM to route the question (`index`, `general`, `search`) |
-| `retriever` | ReAct agent that queries the FAISS index of uploaded documents |
+| `retriever` | Similarity search over the FAISS index of the uploaded document |
 | `grade` | LLM judge: is the retrieved context relevant to the question? |
 | `rewrite` | Reformulates the query for a better retrieval; capped by `MAX_REWRITES` |
 | `web_search` | Tavily search, used for current-events questions and as the retrieval fallback |
