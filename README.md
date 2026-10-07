@@ -64,13 +64,16 @@ python eval/run_eval.py --label without-grader
 
 It reports document-QA accuracy, routing accuracy, how often a rewrite was needed, and latency. Comparing the two runs shows what the grade → rewrite loop adds.
 
-<!-- Fill in after running the evaluation:
+**Results** (`openai/gpt-oss-120b` on Groq, with grader + rewriter):
 
-| Configuration | Document-QA accuracy | Routing accuracy | Median latency |
-|---|---|---|---|
-| With grader + rewriter | __% | __% | __ s |
-| Without grader (ENABLE_GRADER=false) | __% | __% | __ s |
--->
+| Metric | Result |
+|---|---|
+| Document-QA accuracy | **100%** (17/17) |
+| Routing accuracy (index / general / search) | **100%** (20/20) |
+| Overall accuracy | 95% (19/20; the one web-search question was judged incorrect) |
+| Median latency per question | 12.4 s (free-tier rate limits) |
+
+On this small, clean document every first retrieval was relevant, so no query rewrites were triggered. The `ENABLE_GRADER=false` run is the comparison to make on harder, noisier documents.
 
 ## Getting started
 
@@ -88,7 +91,7 @@ cp .env.example .env              # then add your API keys
 Start the backend and the UI in two terminals:
 
 ```bash
-uvicorn src.main:app --reload            # API on http://127.0.0.1:8000 (docs at /docs)
+uvicorn src.main:app --reload --reload-dir src   # API on http://127.0.0.1:8000 (docs at /docs)
 streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 ```
 
