@@ -83,4 +83,4 @@ def documents(description: str, file: UploadFile = File(...), session_id: str = 
         raise ValueError("No text found in the file. Is it a scanned/image-only PDF?")
     logger.debug("First chunk: %s", chunks[0].page_content[:500])
 
-    return retriever_chain(chunks, session_id)
+    return retriever_chain(chunks, session_id, description)

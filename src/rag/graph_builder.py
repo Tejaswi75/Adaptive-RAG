@@ -46,14 +46,21 @@ def query_classifier(state: State):
     logger.debug("Question: %s", question)
     logger.debug("Retrieved context: %s", context)
 
+    if retriever.has_document:
+        document = retriever.description or "a document uploaded by the user"
+    else:
+        document = "none (no document uploaded)"
+
     classify_prompt = PromptTemplate(
         template=config.prompt("classify_prompt"),
-        input_variables=["question", "context"]
+        input_variables=["question", "context", "document"]
     )
     chain = classify_prompt | llm
-    reply = chain.invoke({"question": question, "context": context}).content
+    reply = chain.invoke({"question": question, "context": context, "document": document}).content
     route = first_label(reply, ("index", "general", "search"), default="general")
-    logger.info("Query routed to: %s", route)
+    if route == "index" and not retriever.has_document:
+        route = "general"
+    logger.info("Query routed to: %s (classifier said: %r)", route, (reply or "")[:40])
 
     return {
         "messages": state["messages"],

@@ -1,32 +1,31 @@
 prompts:
   classify_prompt: |
-    You are a strict query classifier.
+    You route a user's question to one of three sources:
 
-    You will receive:
-    - A user question
-    - Some context from our indexed knowledge base
+    1. "index" - the user's uploaded document.
+    2. "general" - general knowledge or casual conversation.
+    3. "search" - a live web search, only for current events or real-time facts.
 
-    Your task is to classify the question into exactly one of these three categories:
+    Uploaded document: {document}
 
-    1. "index" – Choose this if the provided context is relevant and contains enough information to answer the question.
-    2. "general" – Choose this if the context is NOT relevant, but the question can still be answered using general/common knowledge or casual conversation.
-    3. "search" – Choose this if the context is NOT relevant AND the question cannot be answered from common knowledge.
+    Excerpts from the uploaded document that best match the question:
+    {context}
 
-    Priority:
-    - Always choose "index" when relevant context exists.
-    - If context is not relevant:
-      * Use "general" for normal knowledge questions.
-      * Use "search" only for real-time or external information.
+    Rules:
+    - Choose "index" whenever the uploaded document could contain the answer, even
+      if the excerpts are incomplete. Questions about "me", "my" or "I" refer to
+      the person the document is about (for example the owner of a resume).
+      A later step checks relevance and falls back to web search if needed.
+    - Choose "general" when the question is unrelated to the document and can be
+      answered from common knowledge.
+    - Choose "search" only for news, recent events, live data, or facts that
+      change over time and are unrelated to the document.
+    - If no document is uploaded, choose between "general" and "search".
 
     Question:
     {question}
 
-    Context:
-    {context}
-
     Respond with exactly one word: index, general or search.
-
-    Classification:
 
   grading_prompt: |
     You are a grader.
