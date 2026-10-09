@@ -10,6 +10,7 @@ import asyncio
 import logging
 import os
 import sys
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -20,6 +21,27 @@ logger = logging.getLogger(__name__)
 # FastAPI backend URL (set BACKEND_URL when the backend runs elsewhere)
 PYTHON_BASE_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 EMBEDDED = os.getenv("EMBEDDED_BACKEND", "false").lower() == "true"
+
+
+_loop = None
+_loop_lock = threading.Lock()
+
+
+def _run(coro):
+    """
+    Run a backend coroutine on one long-lived event loop.
+
+    Streamlit runs the script in a new thread on every interaction, and
+    asyncio.run() would create (and close) a new loop each time. The async
+    MongoDB client binds to the first loop it uses, so later calls on a new
+    loop fail with "Event loop is closed". A single background loop avoids that.
+    """
+    global _loop
+    with _loop_lock:
+        if _loop is None:
+            _loop = asyncio.new_event_loop()
+            threading.Thread(target=_loop.run_forever, name="backend-loop", daemon=True).start()
+    return asyncio.run_coroutine_threadsafe(coro, _loop).result()
 
 
 def _load_backend():
@@ -46,7 +68,7 @@ def query_backend(query: str, session_id: str) -> str:
         routes = _load_backend()
         from src.models.query_request import QueryRequest
         try:
-            out = asyncio.run(routes.rag_query(QueryRequest(query=query, session_id=session_id)))
+            out = _run(routes.rag_query(QueryRequest(query=query, session_id=session_id)))
             return out["result"].content
         except Exception as e:
             logger.exception("Query failed")
@@ -121,7 +143,7 @@ def get_session(session_id: str) -> dict:
     try:
         if EMBEDDED:
             routes = _load_backend()
-            return asyncio.run(routes.get_session(session_id))
+            return _run(routes.get_session(session_id))
         response = requests.get(f"{PYTHON_BASE_URL}/rag/session", headers={"X-Session-Id": session_id})
         return response.json() if response.status_code == 200 else empty
     except Exception:
@@ -134,7 +156,7 @@ def delete_document(session_id: str) -> bool:
     try:
         if EMBEDDED:
             routes = _load_backend()
-            return bool(asyncio.run(routes.delete_document(session_id))["status"])
+            return bool(_run(routes.delete_document(session_id))["status"])
         response = requests.delete(f"{PYTHON_BASE_URL}/rag/documents", headers={"X-Session-Id": session_id})
         return response.status_code == 200
     except Exception:
