@@ -106,3 +106,37 @@ def document_upload_rag(file, description: str, session_id: str) -> bool:
         logger.error("Upload failed: %s", response.text)
 
     return False
+
+
+def get_session(session_id: str) -> dict:
+    """
+    Fetch the saved document and chat history for a session.
+
+    Returns:
+        {"persistent": bool, "document": {"filename", "description"} or None,
+         "history": [{"role", "content"}]}.
+        On any error, an empty session.
+    """
+    empty = {"persistent": False, "document": None, "history": []}
+    try:
+        if EMBEDDED:
+            routes = _load_backend()
+            return asyncio.run(routes.get_session(session_id))
+        response = requests.get(f"{PYTHON_BASE_URL}/rag/session", headers={"X-Session-Id": session_id})
+        return response.json() if response.status_code == 200 else empty
+    except Exception:
+        logger.exception("Could not load session")
+        return empty
+
+
+def delete_document(session_id: str) -> bool:
+    """Delete the session's saved document and chat history."""
+    try:
+        if EMBEDDED:
+            routes = _load_backend()
+            return bool(asyncio.run(routes.delete_document(session_id))["status"])
+        response = requests.delete(f"{PYTHON_BASE_URL}/rag/documents", headers={"X-Session-Id": session_id})
+        return response.status_code == 200
+    except Exception:
+        logger.exception("Could not delete document")
+        return False

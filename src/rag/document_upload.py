@@ -83,4 +83,9 @@ def documents(description: str, file: UploadFile = File(...), session_id: str = 
         raise ValueError("No text found in the file. Is it a scanned/image-only PDF?")
     logger.debug("First chunk: %s", chunks[0].page_content[:500])
 
-    return retriever_chain(chunks, session_id, description)
+    # The loader records the temporary file's path; keep the real file name instead
+    name = os.path.basename(filename)
+    for chunk in chunks:
+        chunk.metadata["source"] = name
+
+    return retriever_chain(chunks, session_id, description, name)
