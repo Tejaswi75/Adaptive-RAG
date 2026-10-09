@@ -11,6 +11,8 @@ from src.memory import get_session_history
 from src.models.query_request import QueryRequest
 from src.rag.document_upload import documents
 from src.rag.graph_builder import builder
+from src.rag import document_store
+from src.rag.retriever_setup import document_info, forget
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -73,3 +75,29 @@ async def upload_file(
             "status": False,
             "error": str(e)
         }
+
+
+@router.get("/rag/session")
+async def get_session(session_id: str = Header(..., alias="X-Session-Id")):
+    """
+    The saved document and chat history for a session, so a returning user
+    picks up where they left off.
+    """
+    messages = await get_session_history(session_id).get_messages()
+    roles = {"human": "user", "ai": "assistant"}
+    return {
+        "persistent": document_store.enabled(),
+        "document": await asyncio.to_thread(document_info, session_id),
+        "history": [
+            {"role": roles[m.type], "content": m.content}
+            for m in messages if m.type in roles
+        ],
+    }
+
+
+@router.delete("/rag/documents")
+async def delete_document(session_id: str = Header(..., alias="X-Session-Id")):
+    """Delete the session's document and chat history, in memory and in MongoDB."""
+    await asyncio.to_thread(forget, session_id)
+    await get_session_history(session_id).clear()
+    return {"status": True}

@@ -7,3 +7,4 @@ __pycache__/
 app.log
 description.txt
 eval/results/
+.pytest_cache/

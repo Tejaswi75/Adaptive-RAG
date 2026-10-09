@@ -8,9 +8,14 @@ import streamlit as st
 
 st.set_page_config(page_title="Adaptive RAG Assistant", page_icon="🤖")
 
-# Each browser session gets its own chat history in MongoDB.
-if "session_id" not in st.session_state:
-    st.session_state["session_id"] = str(uuid.uuid4())
+# The chat page owns the session id. If this page was opened with a saved
+# link (?sid=...), pass that id on so the chat and document are restored.
+sid = st.query_params.get("sid", "")
+try:
+    if sid and str(uuid.UUID(sid)) == sid:
+        st.session_state["session_id"] = sid
+except ValueError:
+    pass
 
 st.title("🤖 Adaptive RAG Assistant")
 st.write(

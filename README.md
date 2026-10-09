@@ -48,7 +48,7 @@ flowchart TD
 | Embeddings | [FastEmbed](https://github.com/qdrant/fastembed) (`all-MiniLM-L6-v2`, ONNX, no PyTorch) |
 | Vector store | [FAISS](https://github.com/facebookresearch/faiss) |
 | Web search | [Tavily](https://tavily.com) |
-| Chat memory | MongoDB, or in-memory when no database is configured |
+| Chat memory and saved documents | MongoDB (7-day expiry), or in-memory when no database is configured |
 | Backend / frontend | FastAPI / Streamlit |
 
 ## Evaluation
@@ -101,7 +101,8 @@ streamlit run streamlit_app/home.py      # UI on http://localhost:8501
 | `GROQ_API_KEY` | — | LLM inference (required) |
 | `TAVILY_API_KEY` | — | Web search (required) |
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` | Groq chat model |
-| `MONGO_URI` | unset | MongoDB for chat history. If unset, history is kept in memory (lost on restart) |
+| `MONGO_URI` | unset | MongoDB for chat history and saved documents. If unset, both are kept in memory (lost on restart) |
+| `DOCUMENT_TTL_DAYS` | `7` | Days before a saved document and its chat are deleted automatically |
 | `BACKEND_URL` | `http://127.0.0.1:8000` | Where the Streamlit UI reaches the API |
 | `MAX_REWRITES` | `2` | Query rewrites before falling back to web search |
 | `ENABLE_GRADER` | `true` | `false` skips grading and rewriting (evaluation ablation) |
@@ -118,7 +119,9 @@ Set `EMBEDDED_BACKEND=true` and the Streamlit app runs the backend code in-proce
    GROQ_API_KEY = "..."
    TAVILY_API_KEY = "..."
    GROQ_MODEL = "openai/gpt-oss-120b"
+   MONGO_URI = "mongodb+srv://..."   # optional: saves documents and chats for 7 days
    ```
+   With `MONGO_URI`, allow access from anywhere (`0.0.0.0/0`) in MongoDB Atlas → Network Access, since Streamlit Cloud has no fixed IP.
 
 For container platforms, the `Dockerfile` runs the API and UI together (UI on port 7860).
 
@@ -128,6 +131,8 @@ For container platforms, the `Dockerfile` runs the API and UI together (UI on po
 |---|---|---|
 | `POST` | `/rag/documents/upload` | Multipart `file` (PDF/TXT), `X-Description` header, and `X-Session-Id` header (the chat session to index it for) |
 | `POST` | `/rag/query` | Body `{"query": "...", "session_id": "..."}`; returns the answer, the route taken and the number of rewrites |
+| `GET` | `/rag/session` | `X-Session-Id` header; returns the session's saved document (file name, description) and chat history |
+| `DELETE` | `/rag/documents` | `X-Session-Id` header; deletes the session's document and chat history |
 
 ## Project structure
 
@@ -145,13 +150,30 @@ Adaptive-RAG/
 │   └── tools/          Routing and grading logic
 ├── streamlit_app/      Chat UI
 ├── eval/               Evaluation set and runner
+├── tests/              Tests for saving and restoring documents
 └── docs/               Screenshots
+```
+
+## Saved documents
+
+With `MONGO_URI` set, each chat's document is saved so it survives restarts and can be reopened later:
+
+- The chat's id is in the page URL (`?sid=...`). Opening the same link again restores the document and the conversation.
+- MongoDB stores the text chunks, their embeddings and the description, never the uploaded file itself. Restoring rebuilds the FAISS index from the saved embeddings, so nothing is re-embedded.
+- A MongoDB TTL index deletes documents and chats after `DOCUMENT_TTL_DAYS` (default 7). **Delete my document and chat** in the sidebar removes them at once.
+- Each chat sees only its own document. Anyone with a chat's link can open it, so treat the link like a password.
+- If MongoDB is unreachable, uploads still work in memory for the current session.
+
+```bash
+pip install -r requirements-dev.txt
+pytest          # 10 tests for saving, restoring, expiry and deletion
 ```
 
 ## Known limitations
 
-- Each chat session has its own FAISS index (the last `MAX_SESSIONS`, default 50, are kept). Indexes live in memory and reset when the backend restarts; starting a new chat starts without documents.
-- Uploading another file in the same session replaces the previous one.
+- The last `MAX_SESSIONS` (default 50) indexes are kept in memory; older ones are rebuilt from MongoDB when needed, or lost if no database is configured.
+- Uploading another file in the same chat replaces the previous one.
+- Relevant chunks are sent to the LLM provider (Groq) to generate answers; use a self-hosted model for confidential documents.
 
 ## Author
 
